@@ -15,7 +15,7 @@ const RADICALS = {
   '水':['水','水','Thủy','nước'], '没':['氵','水','Thủy','nước'], '河':['氵','水','Thủy','nước'], '喝':['口','口','Khẩu','miệng'],
   '吃':['口','口','Khẩu','miệng'], '吗':['口','口','Khẩu','miệng'], '叫':['口','口','Khẩu','miệng'], '听':['口','口','Khẩu','miệng'],
   '看':['目','目','Mục','mắt'], '见':['见','見','Kiến','nhìn thấy'], '眼':['目','目','Mục','mắt'],
-  '学':['子','子','Tử','con; học tập'], '生':['生','生','Sinh','sinh ra; sự sống'], '字':['子','子','Tử','con; chữ'], '家':['宀','宀','Miên','mái nhà'],
+  '学':['子','子','Tử','con; học tập'], '生':['生','生','Sinh','sinh ra; sự sống'], '字':['子','子','Tử','con; chữ'], '家':['宀','宀','Miên','mái nhà'], '客':['宀','宀','Miên','mái nhà'],
   '安':['宀','宀','Miên','mái nhà'], '有':['月','月','Nguyệt','trăng; phần thịt trong một số chữ'], '月':['月','月','Nguyệt','mặt trăng'],
   '木':['木','木','Mộc','cây; gỗ'], '本':['木','木','Mộc','cây; gỗ'], '林':['木','木','Mộc','cây; gỗ'], '来':['木','木','Mộc','thành phần chữ'],
   '人':['人','人','Nhân','người'], '个':['人','人','Nhân','người'], '今':['人','人','Nhân','thành phần chữ'], '会':['人','人','Nhân','người'],
@@ -30,6 +30,35 @@ const RADICALS = {
   '车':['车','車','Xa','xe'], '东':['一','一','Nhất','nét ngang'], '西':['覀','襾','Á','che phủ'], '北':['匕','匕','Chủy','cái thìa'],
   '雨':['雨','雨','Vũ','mưa'], '风':['风','風','Phong','gió'], '气':['气','气','Khí','khí'], '云':['二','二','Nhị','hai'],
 };
+
+const PINYIN_SYLLABLES = new Set(('a ai an ang ao e ei en eng er o ou ba bai ban bang bao bei ben beng bi bian biao bie bin bing bo bu pa pai pan pang pao pei pen peng pi pian piao pie pin ping po pu ma mai man mang mao me mei men meng mi mian miao mie min ming miu mo mou mu fa fan fang fei fen feng fo fou fu da dai dan dang dao de dei den deng di dia dian diao die ding diu dong dou du duan dui dun duo ta tai tan tang tao te teng ti tian tiao tie ting tong tou tu tuan tui tun tuo na nai nan nang nao ne nei nen neng ni nian niang niao nie nin ning niu nong nou nu nuan nuo nü nüe la lai lan lang lao le lei leng li lia lian liang liao lie lin ling liu long lou lu luan lun luo lü lüe ga gai gan gang gao ge gei gen geng gong gou gu gua guai guan guang gui gun guo ka kai kan kang kao ke ken keng kong kou ku kua kuai kuan kuang kui kun kuo ha hai han hang hao he hei hen heng hong hou hu hua huai huan huang hui hun huo ji jia jian jiang jiao jie jin jing jiong jiu ju juan jue jun qi qia qian qiang qiao qie qin qing qiong qiu qu quan que qun xi xia xian xiang xiao xie xin xing xiong xiu xu xuan xue xun zha zhai zhan zhang zhao zhe zhei zhen zheng zhi zhong zhou zhu zhua zhuai zhuan zhuang zhui zhun zhuo cha chai chan chang chao che chen cheng chi chong chou chu chua chuai chuan chuang chui chun chuo sha shai shan shang shao she shei shen sheng shi shou shu shua shuai shuan shuang shui shun shuo re ren reng ri rong rou ru rua ruan rui run ruo za zai zan zang zao ze zei zen zeng zi zong zou zu zuan zui zun zuo ca cai can cang cao ce cen ceng ci cong cou cu cuan cui cun cuo sa sai san sang sao se sen seng si song sou su suan sui sun suo ya yan yang yao ye yi yin ying yo yong you yu yuan yue yun wa wai wan wang wei wen weng wo wu yue yun').split(' '));
+const PINYIN_PLAIN = (value) => String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ü/g, 'v');
+function splitPinyinToken(token) {
+  const original = String(token || '');
+  const plain = PINYIN_PLAIN(original);
+  const memo = new Map();
+  const solve = (i) => {
+    if (i === plain.length) return [];
+    if (memo.has(i)) return memo.get(i);
+    // Longest-first segmentation handles common syllables such as dian-hua and ke-qi.
+    for (let j = Math.min(plain.length, i + 6); j > i; j--) {
+      const part = plain.slice(i, j);
+      if (PINYIN_SYLLABLES.has(part)) {
+        const rest = solve(j);
+        if (rest) { const result = [original.slice(i, j), ...rest]; memo.set(i, result); return result; }
+      }
+    }
+    memo.set(i, null); return null;
+  };
+  return solve(0) || [original];
+}
+function getCharacterReading(word, index, characterCount) {
+  const tokens = String(word?.pin || '').trim().split(/\s+/).filter(Boolean);
+  const syllables = tokens.flatMap(splitPinyinToken);
+  if (syllables.length === characterCount) return syllables[index] || '';
+  if (tokens.length === characterCount) return tokens[index] || '';
+  return '';
+}
 
 function StrokePractice({ word }) {
   const hostRef = useRef(null);
@@ -46,6 +75,7 @@ function StrokePractice({ word }) {
   const chars = useMemo(() => Array.from(String(word?.han || '')).filter(isHan), [word?.han]);
   const currentChar = chars[charIndex] || '';
   const radical = RADICALS[currentChar];
+  const currentReading = getCharacterReading(word, charIndex, chars.length);
 
   useEffect(() => {
     if (!expanded || !hostRef.current || !currentChar) return undefined;
@@ -88,9 +118,9 @@ function StrokePractice({ word }) {
     {expanded && <div className="radical-stroke-content">
       <div className="radical-section-title"><span>01</span><b>PHÂN TÍCH BỘ THỦ</b><small>{chars.length > 1 ? `Chữ ${charIndex + 1}/${chars.length}` : 'Cấu tạo chữ'}</small></div>
       <div className="radical-info-grid">
-        <div className="radical-character"><strong>{currentChar}</strong><small>{word.pin}</small></div>
+        <div className="radical-character"><strong>{currentChar}</strong><small>{currentReading || 'Chưa tách được Pinyin riêng'}</small></div>
         <div className="radical-detail">
-          {radical ? <><div className="radical-symbol">{radical[0]}</div><div className="radical-name-wrap"><small className="radical-name-label">TÊN BỘ THỦ</small><b>Bộ {radical[2]}</b></div></> : <><div className="radical-symbol muted">?</div><div><b>Chưa có dữ liệu bộ thủ</b><small>Chữ này vẫn có thể xem hoạt ảnh thứ tự nét bên dưới.</small></div></>}
+          {radical ? <><div className="radical-symbol">{radical[0]}</div><div className="radical-name-wrap"><small className="radical-name-label">TÊN BỘ THỦ</small><b>Bộ {radical[2]}</b>{currentReading && <small className="radical-character-reading">Đọc: {currentReading}</small>}</div></> : <><div className="radical-symbol muted">?</div><div><b>Chưa có dữ liệu bộ thủ</b>{currentReading && <small>Đọc: {currentReading}</small>}<small>Chữ này vẫn có thể xem hoạt ảnh thứ tự nét bên dưới.</small></div></>}
         </div>
       </div>
       <div className="radical-divider"/>
