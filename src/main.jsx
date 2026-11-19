@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BookOpen, Languages, Bookmark, LayoutDashboard, Search, Volume2, Sparkles, Check, Plus, Trash2, Menu, X, ArrowLeftRight, GraduationCap, ChevronRight, Leaf, CircleHelp, MessageCircle, Send, RotateCcw, Headphones, Captions, Mic, Keyboard, Play, Pause, CheckCircle2 } from 'lucide-react';
+import { BookOpen, Languages, Bookmark, LayoutDashboard, Search, Volume2, Sparkles, Check, Plus, Trash2, Menu, X, ArrowLeftRight, GraduationCap, ChevronRight, Leaf, CircleHelp, MessageCircle, Send, RotateCcw, Headphones, Captions, Mic, Keyboard, Play, Pause, CheckCircle2, ClipboardList } from 'lucide-react';
 import './style.css';
 import HSKVocabNotebook from './components/HSKVocabNotebook.jsx';
 import HSKListeningPractice from './components/HSKListeningPractice.jsx';
+import HSKOnlineExercises from './components/HSKOnlineExercises.jsx';
 import hsk1Data from './data/hsk1-data.json';
 
 const DEMO_WORDS = [
@@ -18,19 +19,7 @@ const DEMO_WORDS = [
   {han:'再见',pin:'zàijiàn',viet:'Tái kiến',meaning:'Tạm biệt',type:'Thán từ',level:'HSK 1',example:'明天见，再见！',epin:'Míngtiān jiàn, zàijiàn!',eviet:'Ngày mai gặp lại, tạm biệt!',context:'Dùng khi kết thúc cuộc trò chuyện.'},
   {han:'书',pin:'shū',viet:'Thư',meaning:'Sách',type:'Danh từ',level:'HSK 1',example:'这是我的书。',epin:'Zhè shì wǒ de shū.',eviet:'Đây là sách của tôi.',context:'Đồ vật học tập.'}
 ];
-const WORDS = [
-  ...hsk1Data.words.map(w => ({
-    ...w,
-    hanviet: w.hanviet ?? '',
-    viet: w.viet ?? w.hanviet ?? '',
-    example: w.example ?? '',
-    epin: w.epin ?? '',
-    eviet: w.eviet ?? '',
-    context: w.context ?? `Từ vựng Bài ${w.lesson} trong giáo trình HSK 1.`,
-    level: 'HSK 1'
-  })),
-  ...DEMO_WORDS.filter(d => !hsk1Data.words.some(w => w.han === d.han))
-];
+const WORDS = [...hsk1Data.words.map(w=>({...w,hanviet:'',viet:'',example:'',epin:'',eviet:'',context:`Từ vựng Bài ${w.lesson} trong giáo trình HSK 1.`})), ...DEMO_WORDS.filter(d=>!hsk1Data.words.some(w=>w.han===d.han))];
 const LISTENING_LESSON={title:'Một ngày Chủ nhật',level:'HSK 1–2',duration:'00:28',intro:'Nghe đoạn ngắn về thói quen sinh hoạt hằng ngày.',segments:[
 {time:'00:00',han:'大家好，今天是星期天，我不用去上班，也不用去上学。',pin:'Dàjiā hǎo, jīntiān shì xīngqītiān, wǒ bú yòng qù shàngbān, yě bú yòng qù shàngxué.',vi:'Xin chào mọi người, hôm nay là Chủ nhật, tôi không phải đi làm cũng không phải đi học。',gap:'大家好，今天是____，我不用去上班，也不用去上学。'},
 {time:'00:06',han:'我早上八点起床，然后去厨房做早饭。',pin:'Wǒ zǎoshang bā diǎn qǐchuáng, ránhòu qù chúfáng zuò zǎofàn.',vi:'Tôi thức dậy lúc tám giờ sáng, rồi vào bếp làm bữa sáng。',gap:'我早上____点起床，然后去厨房做早饭。'},
@@ -43,7 +32,7 @@ const DEMO_TRANSLATIONS = {
  'cảm ơn bạn': {han:'谢谢你。',pin:'Xièxie nǐ.',note:'Cách cảm ơn trực tiếp, tự nhiên.'},
  'tôi đang học tiếng trung': {han:'我正在学习中文。',pin:'Wǒ zhèngzài xuéxí Zhōngwén.',note:'正在 nhấn mạnh hành động đang diễn ra.'}
 };
-const nav = [{id:'home',label:'Tổng quan',icon:LayoutDashboard},{id:'dictionary',label:'Từ điển AI',icon:BookOpen},{id:'translate',label:'Dịch nhanh',icon:Languages},{id:'vocab',label:'Sổ từ vựng',icon:Bookmark},{id:'chat',label:'Gia sư AI',icon:MessageCircle},{id:'listening',label:'Luyện nghe',icon:Headphones}];
+const nav = [{id:'home',label:'Tổng quan',icon:LayoutDashboard},{id:'dictionary',label:'Từ điển AI',icon:BookOpen},{id:'translate',label:'Dịch nhanh',icon:Languages},{id:'vocab',label:'Sổ từ vựng',icon:Bookmark},{id:'chat',label:'Gia sư AI',icon:MessageCircle},{id:'listening',label:'Luyện nghe',icon:Headphones},{id:'exercises',label:'Bài tập HSK 1',icon:ClipboardList}];
 function App(){
  const [page,setPage]=useState('home'); const [mobileOpen,setMobileOpen]=useState(false); const [query,setQuery]=useState('朋友'); const [selected,setSelected]=useState(WORDS.find(w=>w.han==='朋友')||WORDS[0]); const [saved,setSaved]=useState(()=>JSON.parse(localStorage.getItem('panda-saved')||'[]')); const [source,setSource]=useState('vi'); const [translationText,setTranslationText]=useState('Giá này có thể giảm thêm được không?'); const [translation,setTranslation]=useState(DEMO_TRANSLATIONS['giá này có thể giảm thêm được không?']); const [busy,setBusy]=useState(false); const [notice,setNotice]=useState(''); const [chatInput,setChatInput]=useState(''); const [chatBusy,setChatBusy]=useState(false); const [chatMessages,setChatMessages]=useState(()=>JSON.parse(localStorage.getItem('panda-chat')||'null')||[{role:'assistant',content:'你好！我是你的中文老师。\nXin chào! Tôi là gia sư tiếng Trung của bạn. Hôm nay chúng ta muốn luyện chủ đề nào? Bạn có thể trò chuyện bằng tiếng Việt hoặc tiếng Trung.'}]); const [listenMode,setListenMode]=useState('captions'); const [listenIndex,setListenIndex]=useState(0); const [showListenPin,setShowListenPin]=useState(true); const [showListenVi,setShowListenVi]=useState(true); const [dictation,setDictation]=useState({}); const [listenFeedback,setListenFeedback]=useState({}); const [listenPlaying,setListenPlaying]=useState(false);
  const filtered=useMemo(()=>WORDS.filter(w=>[w.han,w.pin,w.viet,w.meaning].some(x=>x.toLowerCase().includes(query.toLowerCase()))),[query]);
@@ -69,6 +58,7 @@ function App(){
    {page==='translate'&&<><PageIntro eyebrow="TRỢ LÝ NGÔN NGỮ" title="Dịch nhanh AI" desc="Dịch câu tự nhiên giữa tiếng Việt và tiếng Trung, có kèm pinyin."/><div className="translator-card"><div className="translate-toolbar"><span>{source==='vi'?'TIẾNG VIỆT':'TIẾNG TRUNG'}</span><button className="swap" onClick={()=>{setSource(source==='vi'?'zh':'vi');setTranslation(null)}}><ArrowLeftRight size={17}/> Đổi chiều</button><span>{source==='vi'?'TIẾNG TRUNG':'TIẾNG VIỆT'}</span></div><div className="translate-columns"><div className="translate-input"><label>{source==='vi'?'Bạn gõ tiếng Việt':'Bạn gõ tiếng Trung'}</label><textarea value={translationText} onChange={e=>setTranslationText(e.target.value)} placeholder="Nhập nội dung cần dịch..."/><div className="input-foot"><span>{translationText.length} ký tự</span><button onClick={()=>setTranslationText('')}><Trash2 size={14}/> Xóa</button></div></div><div className="translate-output"><label>KẾT QUẢ DỊCH</label>{translation?.han||translation?.pin?<><div className="translated-han">{translation.han}</div><div className="translated-pin">{translation.pin}</div><div className="translate-note">{translation.note}</div><button className="sound-link" onClick={()=>speak(translation.han)}><Volume2 size={15}/> Nghe phát âm</button></>:<div className="output-placeholder"><Languages size={27}/><span>Bản dịch sẽ xuất hiện tại đây</span></div>}</div></div><button className="primary-btn translate-btn" onClick={translate} disabled={busy||!translationText.trim()}>{busy?'Đang xử lý...':<><Sparkles size={17}/> Dịch nội dung</>}</button><div className="demo-hint"><CircleHelp size={15}/> Có sẵn một số câu mẫu. Muốn dịch tự do, hãy cấu hình Gemini API theo hướng dẫn trong README.</div></div><div className="quick-phrases"><b>Câu mẫu thường dùng</b><div>{['Xin chào','Cảm ơn bạn','Tôi đang học tiếng Trung','Giá này có thể giảm thêm được không?'].map(t=><button key={t} onClick={()=>{setSource('vi');setTranslationText(t);setTranslation(DEMO_TRANSLATIONS[t.toLocaleLowerCase('vi')]||null)}}>{t}</button>)}</div></div></>}
    {page==='chat'&&<><PageIntro eyebrow="LUYỆN GIAO TIẾP CÙNG AI" title="Gia sư tiếng Trung" desc="Trò chuyện, luyện phản xạ và nhận sửa lỗi bằng tiếng Việt. Hãy thử trả lời bằng tiếng Trung nhé."/><div className="chat-shell"><div className="chat-head"><div className="chat-avatar">🐼</div><div><b>Gia sư Nhật Tu</b><small><i/> Sẵn sàng luyện tập · HSK 1–9</small></div><button className="icon-btn" onClick={resetChat} title="Làm mới hội thoại"><RotateCcw size={17}/></button></div><div className="chat-messages">{chatMessages.map((m,i)=><div key={i} className={`chat-message ${m.role==='user'?'mine':'theirs'}`}><div className="chat-bubble">{m.content.split('\n').map((line,j)=><React.Fragment key={j}>{line}{j<m.content.split('\n').length-1&&<br/>}</React.Fragment>)}</div><small>{m.role==='user'?'Bạn':'Gia sư Nhật Tu'}</small></div>)}{chatBusy&&<div className="chat-message theirs"><div className="chat-bubble typing">Gia sư đang suy nghĩ…</div></div>}</div><form className="chat-compose" onSubmit={e=>{e.preventDefault();sendChat();}}><textarea value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}}} placeholder="Nhập câu tiếng Trung hoặc tiếng Việt..." rows={2}/><button className="primary-btn" disabled={chatBusy||!chatInput.trim()}><Send size={17}/> Gửi</button></form><div className="chat-suggestions"><b>Chủ đề luyện tập</b><div>{['你好！请介绍一下自己。','我想练习日常对话。','Hãy kiểm tra trình độ HSK 1 của tôi.','Giải thích cách dùng 是 và 有.'].map(t=><button key={t} onClick={()=>sendChat(t)}>{t}</button>)}</div></div></div><div className="demo-hint"><CircleHelp size={15}/> Gia sư AI cần cấu hình GEMINI_API_KEY ở máy chủ để trả lời linh hoạt. Hội thoại được lưu trên trình duyệt hiện tại.</div></>}
    {page==='listening'&&<HSKListeningPractice words={hsk1Data.words} lessons={hsk1Data.lessons}/>}
+   {page==='exercises'&&<HSKOnlineExercises words={hsk1Data.words} lessons={hsk1Data.lessons}/>} 
 
    {page==='vocab'&&<HSKVocabNotebook words={hsk1Data.words} lessons={hsk1Data.lessons} saved={saved} onToggleSave={saveWord} speak={speak}/>}
 
