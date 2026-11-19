@@ -18,7 +18,19 @@ const DEMO_WORDS = [
   {han:'再见',pin:'zàijiàn',viet:'Tái kiến',meaning:'Tạm biệt',type:'Thán từ',level:'HSK 1',example:'明天见，再见！',epin:'Míngtiān jiàn, zàijiàn!',eviet:'Ngày mai gặp lại, tạm biệt!',context:'Dùng khi kết thúc cuộc trò chuyện.'},
   {han:'书',pin:'shū',viet:'Thư',meaning:'Sách',type:'Danh từ',level:'HSK 1',example:'这是我的书。',epin:'Zhè shì wǒ de shū.',eviet:'Đây là sách của tôi.',context:'Đồ vật học tập.'}
 ];
-const WORDS = [...hsk1Data.words.map(w=>({...w,hanviet:'',viet:'',example:'',epin:'',eviet:'',context:`Từ vựng Bài ${w.lesson} trong giáo trình HSK 1.`})), ...DEMO_WORDS.filter(d=>!hsk1Data.words.some(w=>w.han===d.han))];
+const WORDS = [
+  ...hsk1Data.words.map(w => ({
+    ...w,
+    hanviet: w.hanviet ?? '',
+    viet: w.viet ?? w.hanviet ?? '',
+    example: w.example ?? '',
+    epin: w.epin ?? '',
+    eviet: w.eviet ?? '',
+    context: w.context ?? `Từ vựng Bài ${w.lesson} trong giáo trình HSK 1.`,
+    level: 'HSK 1'
+  })),
+  ...DEMO_WORDS.filter(d => !hsk1Data.words.some(w => w.han === d.han))
+];
 const LISTENING_LESSON={title:'Một ngày Chủ nhật',level:'HSK 1–2',duration:'00:28',intro:'Nghe đoạn ngắn về thói quen sinh hoạt hằng ngày.',segments:[
 {time:'00:00',han:'大家好，今天是星期天，我不用去上班，也不用去上学。',pin:'Dàjiā hǎo, jīntiān shì xīngqītiān, wǒ bú yòng qù shàngbān, yě bú yòng qù shàngxué.',vi:'Xin chào mọi người, hôm nay là Chủ nhật, tôi không phải đi làm cũng không phải đi học。',gap:'大家好，今天是____，我不用去上班，也不用去上学。'},
 {time:'00:06',han:'我早上八点起床，然后去厨房做早饭。',pin:'Wǒ zǎoshang bā diǎn qǐchuáng, ránhòu qù chúfáng zuò zǎofàn.',vi:'Tôi thức dậy lúc tám giờ sáng, rồi vào bếp làm bữa sáng。',gap:'我早上____点起床，然后去厨房做早饭。'},
